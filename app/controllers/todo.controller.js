@@ -1,11 +1,11 @@
-const db = require("../models");
+const db = require('../models');
 const Todo = db.todos;
 
 // Create and Save a new Todo
 exports.create = (req, res) => {
   // Validate request
   if (!req.body.title) {
-    res.status(400).send({ message: "Content can not be empty!" });
+    res.status(400).send({ message: 'Content can not be empty!' });
     return;
   }
 
@@ -17,13 +17,12 @@ exports.create = (req, res) => {
   // Save Todo in the database
   todo
     .save(todo)
-    .then(data => {
+    .then((data) => {
       res.send(data);
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while creating the Todo."
+        message: err.message || 'Some error occurred while creating the Todo.',
       });
     });
 };
@@ -31,16 +30,17 @@ exports.create = (req, res) => {
 // Get all Todos from the database.
 exports.findAll = (req, res) => {
   const title = req.query.title;
-  var condition = title ? { title: { $regex: new RegExp(title), $options: "i" } } : {};
+  let condition = title
+    ? { title: { $regex: new RegExp(title), $options: 'i' } }
+    : {};
 
   Todo.find(condition)
-    .then(data => {
+    .then((data) => {
       res.send(data);
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while retrieving todos."
+        message: err.message || 'Some error occurred while retrieving todos.',
       });
     });
 };
@@ -49,23 +49,23 @@ exports.findAll = (req, res) => {
 exports.update = (req, res) => {
   if (!req.body) {
     return res.status(400).send({
-      message: "Data to update can not be empty!"
+      message: 'Data to update can not be empty!',
     });
   }
 
   const id = req.params.id;
 
   Todo.findByIdAndUpdate(id, req.body, { useFindAndModify: false })
-    .then(data => {
+    .then((data) => {
       if (!data) {
         res.status(404).send({
-          message: `Cannot update Todo with id=${id}. Maybe Todo was not found!`
+          message: `Cannot update Todo with id=${id}. Maybe Todo was not found!`,
         });
-      } else res.send({ message: "Todo was updated successfully." });
+      } else res.send({ message: 'Todo was updated successfully.' });
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).send({
-        message: "Error updating Todo with id=" + id
+        message: 'Error updating Todo with id=' + id,
       });
     });
 };
@@ -74,17 +74,21 @@ exports.update = (req, res) => {
 exports.updateDone = (req, res) => {
   const id = req.params.id;
 
-  Todo.findByIdAndUpdate(id, {isDone: true}, { useFindAndModify: false })
-    .then(data => {
+  // Todo.findByIdAndUpdate(id, {isDone: true}, { useFindAndModify: false })
+  Todo.findById(id, function (err, todo) {
+    todo.isDone = !todo.isDone;
+    todo.save();
+  })
+    .then((data) => {
       if (!data) {
         res.status(404).send({
-          message: `Cannot update Todo with id=${id}. Maybe Todo was not found!`
+          message: `Cannot update Todo with id=${id}. Maybe Todo was not found!`,
         });
-      } else res.send({ message: "Todo was updated successfully." });
+      } else res.send({ message: 'Todo was updated successfully.' });
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).send({
-        message: "Error updating Todo with id=" + id
+        message: 'Error updating Todo with id=' + id,
       });
     });
 };
@@ -94,36 +98,35 @@ exports.delete = (req, res) => {
   const id = req.params.id;
 
   Todo.findByIdAndRemove(id)
-    .then(data => {
+    .then((data) => {
       if (!data) {
         res.status(404).send({
-          message: `Cannot delete Todo with id=${id}. Maybe Todo was not found!`
+          message: `Cannot delete Todo with id=${id}. Maybe Todo was not found!`,
         });
       } else {
         res.send({
-          message: "Todo was deleted successfully!"
+          message: 'Todo was deleted successfully!',
         });
       }
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).send({
-        message: "Could not delete Todo with id=" + id
+        message: 'Could not delete Todo with id=' + id,
       });
     });
 };
 
 // Delete all DONE todos from the database.
 exports.deleteDone = (req, res) => {
-  Todo.deleteMany({isDone: true})
-    .then(data => {
+  Todo.deleteMany({ isDone: true })
+    .then((data) => {
       res.send({
-        message: `${data.deletedCount} Todos were deleted successfully!`
+        message: `${data.deletedCount} Todos were deleted successfully!`,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while removing all todos."
+        message: err.message || 'Some error occurred while removing all todos.',
       });
     });
 };

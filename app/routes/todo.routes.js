@@ -1,7 +1,7 @@
-module.exports = app => {
+module.exports = (app) => {
   const todos = require('../controllers/todo.controller.js');
 
-  var router = require('express').Router();
+  let router = require('express').Router();
 
   // Create a new Todo
   router.post('/', todos.create);
@@ -17,7 +17,7 @@ module.exports = app => {
 
   // Delete all done - its must be a first one before the same with /:id
   router.delete('/clear-done', todos.deleteDone);
-  
+
   // Delete a Todo with id
   router.delete('/:id', todos.delete);
 
