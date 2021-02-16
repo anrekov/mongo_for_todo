@@ -1,10 +1,11 @@
-module.exports = mongoose => {
+module.exports = (mongoose) => {
   const Todo = mongoose.model(
-    "todo",
+    'todo',
     mongoose.Schema(
       {
         title: String,
-        isDone: { type: Boolean, default: false}
+        isDone: { type: Boolean, default: false },
+        // user: { type: String, ref: 'User' }
       },
       { timestamps: true }
     )

@@ -1,5 +1,6 @@
 const db = require('../models');
-const Todo = db.todos;
+// const Todo = db.todos;
+const User = db.users;
 
 // Create and Save a new Todo
 exports.create = (req, res) => {
@@ -9,40 +10,29 @@ exports.create = (req, res) => {
     return;
   }
 
-  // Create a Todo
-  const todo = new Todo({
-    title: req.body.title,
-  });
+  const name = req.user.username;
 
-  // Save Todo in the database
-  todo
-    .save(todo)
+  User.updateOne(
+    { username: name },
+    { $push: { todos: [{ title: req.body.title }] } }
+  )
     .then((data) => {
-      res.send(data);
+      if (!data) {
+        res.status(404).send({
+          message: `Cannot update User with name=${name}`,
+        });
+      } else res.send({ message: 'User was updated successfully.' });
     })
     .catch((err) => {
       res.status(500).send({
-        message: err.message || 'Some error occurred while creating the Todo.',
+        message: 'Error updating User with name=' + name,
       });
     });
 };
 
 // Get all Todos from the database.
 exports.findAll = (req, res) => {
-  const title = req.query.title;
-  let condition = title
-    ? { title: { $regex: new RegExp(title), $options: 'i' } }
-    : {};
-
-  Todo.find(condition)
-    .then((data) => {
-      res.send(data);
-    })
-    .catch((err) => {
-      res.status(500).send({
-        message: err.message || 'Some error occurred while retrieving todos.',
-      });
-    });
+  res.send(req.user.todos);
 };
 
 // Update a Todo title by the id in the request
@@ -52,10 +42,18 @@ exports.update = (req, res) => {
       message: 'Data to update can not be empty!',
     });
   }
-
+  // todo id
   const id = req.params.id;
+  // local update
+  let arr = req.user.todos;
+  arr.forEach((todo) => {
+    if (todo._id == id) {
+      todo.title = req.body.title;
+    }
+  });
 
-  Todo.findByIdAndUpdate(id, req.body, { useFindAndModify: false })
+  // update whole todos
+  User.updateOne({ username: req.user.username }, { todos: arr })
     .then((data) => {
       if (!data) {
         res.status(404).send({
@@ -72,13 +70,18 @@ exports.update = (req, res) => {
 
 // put Done
 exports.updateDone = (req, res) => {
+  // todo id
   const id = req.params.id;
+  // local update
+  let arr = req.user.todos;
+  arr.forEach((todo) => {
+    if (todo._id == id) {
+      todo.isDone = !todo.isDone;
+    }
+  });
 
-  // Todo.findByIdAndUpdate(id, {isDone: true}, { useFindAndModify: false })
-  Todo.findById(id, function (err, todo) {
-    todo.isDone = !todo.isDone;
-    todo.save();
-  })
+  // update whole todos
+  User.updateOne({ username: req.user.username }, { todos: arr })
     .then((data) => {
       if (!data) {
         res.status(404).send({
@@ -93,40 +96,48 @@ exports.updateDone = (req, res) => {
     });
 };
 
-// Delete a Todo with the specified id in the request
-exports.delete = (req, res) => {
-  const id = req.params.id;
+// Delete all DONE todos from the database.
+exports.deleteDone = (req, res) => {
+  // local update
+  let arr = req.user.todos;
+  arr = arr.filter((todo) => todo.isDone === false);
 
-  Todo.findByIdAndRemove(id)
+  // update whole todos
+  User.updateOne({ username: req.user.username }, { todos: arr })
     .then((data) => {
       if (!data) {
         res.status(404).send({
-          message: `Cannot delete Todo with id=${id}. Maybe Todo was not found!`,
+          message: `Cannot update Todo with id=${id}. Maybe Todo was not found!`,
         });
-      } else {
-        res.send({
-          message: 'Todo was deleted successfully!',
-        });
-      }
+      } else res.send({ message: 'Todo(s) was deleted successfully.' });
     })
     .catch((err) => {
       res.status(500).send({
-        message: 'Could not delete Todo with id=' + id,
+        message: 'Error updating Todo with id=' + id,
       });
     });
 };
 
-// Delete all DONE todos from the database.
-exports.deleteDone = (req, res) => {
-  Todo.deleteMany({ isDone: true })
+// Delete a Todo with the specified id in the request
+exports.delete = (req, res) => {
+  // todo id
+  const id = req.params.id;
+  // local update
+  let arr = req.user.todos;
+  arr = arr.filter((todo) => todo._id != id);
+
+  // update whole todos
+  User.updateOne({ username: req.user.username }, { todos: arr })
     .then((data) => {
-      res.send({
-        message: `${data.deletedCount} Todos were deleted successfully!`,
-      });
+      if (!data) {
+        res.status(404).send({
+          message: `Cannot update Todo with id=${id}. Maybe Todo was not found!`,
+        });
+      } else res.send({ message: 'Todo was updated successfully.' });
     })
     .catch((err) => {
       res.status(500).send({
-        message: err.message || 'Some error occurred while removing all todos.',
+        message: 'Error updating Todo with id=' + id,
       });
     });
 };
